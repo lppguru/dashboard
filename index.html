@@ -1,28 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Executive Dashboard</title>
-    <!-- Tailwind CSS -->
+    <title>Executive Performance Dashboard</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://jsdelivr.net"></script>
-    <!-- Chart.js -->
+    <!-- Chart.js CDN -->
     <script src="https://jsdelivr.net"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased">
+<body class="bg-gray-900 text-gray-100 font-sans antialiased min-h-screen">
 
     <!-- Top Navigation -->
-    <header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur sticky top-0 z-50">
+    <header class="border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-50">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
                 📊 <span class="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Executive Insight</span>
             </h1>
             <div id="last-updated" class="text-xs text-gray-400 bg-gray-800 px-3 py-1 rounded-full border border-gray-700">
-                Memuat data...
+                Menghubungkan ke server data...
             </div>
         </div>
     </header>
 
+    <!-- Main Content -->
     <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         
         <!-- KPI Cards Section -->
@@ -64,7 +65,148 @@
 
     </main>
 
-    <!-- Project Logic -->
-    <script src="app.js"></script>
-</body>
-</html>
+    <!-- Logic JavaScript Dashboard -->
+    <script>
+        // ==========================================
+        // CONFIG: TEMPELKAN LINK CSV GOOGLE SHEETS ANDA DI BAWAH INI
+        // ==========================================
+        const SPREADSHEET_CSV_URL = 'https://google.com';
+
+        // Data cadangan jika Google Sheets bermasalah/belum dikonfigurasi
+        const BACKUP_DATA = [
+            { Bulan: 'Januari', Pendapatan: '45000000', Transaksi: '120', Target: '85', Kategori: 'Elektronik' },
+            { Bulan: 'Februari', Pendapatan: '52000000', Transaksi: '145', Target: '88', Kategori: 'Pakaian' },
+            { Bulan: 'Maret', Pendapatan: '61000000', Transaksi: '190', Target: '92', Kategori: 'Kuliner' },
+            { Bulan: 'April', Pendapatan: '58000000', Transaksi: '170', Target: '90', Kategori: 'Kesehatan' },
+            { Bulan: 'Mei', Pendapatan: '70000000', Transaksi: '210', Target: '95', Kategori: 'Otomotif' }
+        ];
+
+        // Pengaturan Awal Tema Gelap untuk Chart.js
+        if (window.Chart) {
+            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.borderColor = '#374151';
+        }
+
+        let trendChart, pieChart;
+
+        async function initDashboard() {
+            const statusEl = document.getElementById('last-updated');
+            try {
+                // Coba ambil data asli dari Google Sheets
+                const response = await fetch(SPREADSHEET_CSV_URL);
+                if (!response.ok) throw new Error('URL tidak valid atau belum terpublikasi');
+                
+                const csvText = await response.text();
+                const data = parseCSV(csvText);
+
+                if (data && data.length > 0) {
+                    updateUI(data);
+                    if (statusEl) statusEl.innerText = `Live Data Cloud: ${new Date().toLocaleTimeString()}`;
+                } else {
+                    throw new Error('Format CSV kosong');
+                }
+            } catch (error) {
+                console.warn('Menggunakan data simulasi lokal karena:', error.message);
+                // Otomatis pakai data cadangan agar tampilan tidak blank putih
+                updateUI(BACKUP_DATA);
+                if (statusEl) statusEl.innerText = 'Mode Simulasi (Belum Terhubung ke Google Sheets)';
+            }
+        }
+
+        // Pemroses CSV yang Aman dari Karakter Tanda Kutip & Koma Uang
+        function parseCSV(text) {
+            try {
+                const lines = [];
+                let row = [''];
+                let inQuotes = false;
+
+                for (let i = 0; i < text.length; i++) {
+                    const c = text[i];
+                    const next = text[i+1];
+                    if (c === '"') {
+                        if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
+                        else { inQuotes = !inQuotes; }
+                    } else if (c === ',' && !inQuotes) {
+                        row.push('');
+                    } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                        if (c === '\r' && next === '\n') { i++; }
+                        lines.push(row);
+                        row = [''];
+                    } else {
+                        row[row.length - 1] += c;
+                    }
+                }
+                if (row.length > 1 || row[0] !== '') lines.push(row);
+                if (lines.length === 0) return [];
+
+                const headers = lines[0].map(h => h.trim());
+                return lines.slice(1).map(line => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = line[index] ? line[index].trim() : '';
+                    });
+                    return obj;
+                });
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function updateUI(data) {
+            // 1. Hitung & Update Angka KPI
+            let totalRevenue = 0;
+            let totalSales = 0;
+            let targetPct = 0;
+
+            data.forEach(row => {
+                const rev = parseFloat((row.Pendapatan || '').replace(/[^0-9.-]/g, '')) || 0;
+                const sales = parseInt((row.Transaksi || '').replace(/[^0-9.-]/g, '')) || 0;
+                
+                totalRevenue += rev;
+                totalSales += sales;
+                if (row.Target) targetPct = parseFloat(row.Target.replace(/[^0-9.-]/g, '')) || 0;
+            });
+
+            const revEl = document.getElementById('kpi-revenue');
+            const salesEl = document.getElementById('kpi-sales');
+            const targetEl = document.getElementById('kpi-target');
+
+            if (revEl) revEl.innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalRevenue);
+            if (salesEl) salesEl.innerText = new Intl.NumberFormat('id-ID').format(totalSales);
+            if (targetEl) targetEl.innerText = `${targetPct}%`;
+
+            // 2. Gambar Grafik Batang (Tren Bulanan)
+            const months = data.map(row => row.Bulan || 'N/A');
+            const revenues = data.map(row => parseFloat((row.Pendapatan || '').replace(/[^0-9.-]/g, '')) || 0);
+
+            const trendCtx = document.getElementById('trendChart');
+            if (trendCtx && window.Chart) {
+                if (trendChart) trendChart.destroy();
+                trendChart = new Chart(trendCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Pendapatan',
+                            data: revenues,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+
+            // 3. Gambar Grafik Lingkaran (Kategori Produk)
+            const categories = data.map(row => row.Kategori).filter(Boolean);
+            const salesPerCategory = data.map(row => parseInt((row.Transaksi || '').replace(/[^0-9.-]/g, '')) || 0);
+
+            const pieCtx = document.getElementById('pieChart');
+            if (pieCtx && categories.length > 0 && window.Chart) {
+                if (pieChart) pieChart.destroy();
+                pieChart = new Chart(pieCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: categories,
+                        datasets: [{
+                            data: salesPerCategory,
