@@ -1,13 +1,11 @@
 function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
-      .evaluate()
-      .setTitle('Dashboard Eksekutif Organisasi')
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  // Mengembalikan data berformat JSON agar bisa dibaca oleh website di GitHub
+  return ContentService.createTextOutput(getDashboardData())
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function getDashboardData() {
-  // ID Spreadsheet Anda (Sudah benar sesuai input sebelumnya)
+  // ID Spreadsheet Anda
   var idKeguruan = '1feTjAWGR982FHxcK4GivBkuai_NPC3bMHnvkbE3u0tM'; 
   var idKegiatan = '1Z2Mp0gAoe7q-TnzoQC_vzIaSXrA1Aht0aY2Th4rBC7o'; 
   var idPcm      = '1qwhciloe55ICj8L172JJgNKVWNXBLBql2qECnVluwXo'; 
@@ -23,71 +21,41 @@ function getDashboardData() {
   
   // 1. Ambil Data Kuliah Keguruan
   try {
-    var ss1 = SpreadsheetApp.openById(idKeguruan);
-    var sheet1 = ss1.getSheets()[0];
-    var data1 = sheet1.getDataRange().getValues();
+    var data1 = SpreadsheetApp.openById(idKeguruan).getSheets()[0].getDataRange().getValues();
     if (data1.length > 1) {
       res.totalMhs = data1.length - 1;
-      // Ambil maksimal 5 baris data (melewati header)
       for (var i = 1; i < Math.min(data1.length, 6); i++) {
-        res.keguruan.push({
-          no: data1[i][0] || '-',
-          nama: data1[i][1] || '-',
-          prodi: data1[i][3] || '-',
-          angkatan: data1[i][4] || '-'
-        });
+        res.keguruan.push({ no: data1[i][0], nama: data1[i][1], prodi: data1[i][3], angkatan: data1[i][4] });
       }
     }
-  } catch(e) { Logger.log('Error Keguruan: ' + e.message); }
+  } catch(e) { Logger.log(e.message); }
   
   // 2. Ambil Data IE dan ISOSK
   try {
-    var ss2 = SpreadsheetApp.openById(idKegiatan);
-    var sheet2 = ss2.getSheets()[0];
-    var data2 = sheet2.getDataRange().getValues();
+    var data2 = SpreadsheetApp.openById(idKegiatan).getSheets()[0].getDataRange().getValues();
     if (data2.length > 1) {
       res.totalKegiatan = data2.length - 1;
       for (var i = 1; i < Math.min(data2.length, 6); i++) {
-        res.kegiatan.push({
-          nama: data2[i][1] || '-',
-          kegiatan: data2[i][4] || '-',
-          institusi: data2[i][5] || '-',
-          kota: data2[i][6] || '-',
-          kecamatan: data2[i][7] || '-'
-        });
+        res.kegiatan.push({ nama: data2[i][1], kegiatan: data2[i][4], institusi: data2[i][5], kecamatan: data2[i][6], kota: data2[i][7] });
       }
     }
-  } catch(e) { Logger.log('Error Kegiatan: ' + e.message); }
+  } catch(e) { Logger.log(e.message); }
   
   // 3. Ambil Data PCM
   try {
-    var ss3 = SpreadsheetApp.openById(idPcm);
-    var sheet3 = ss3.getSheets()[0];
-    var data3 = sheet3.getDataRange().getValues();
+    var data3 = SpreadsheetApp.openById(idPcm).getSheets()[0].getDataRange().getValues();
     if (data3.length > 1) {
-      var totalPcm = 0;
-      var countPcm = 0;
+      var totalPcm = 0, countPcm = 0;
       for (var i = 1; i < data3.length; i++) {
-        var nilai = parseFloat(data3[i][5]); // Kolom F
-        if (!isNaN(nilai)) {
-          totalPcm += nilai;
-          countPcm++;
-        }
-        
-        // Simpan ke list data ringkasan (hanya sampai indeks ke-5)
+        var nilai = parseFloat(data3[i][5]);
+        if (!isNaN(nilai)) { totalPcm += nilai; countPcm++; }
         if (i < 6) {
-          res.pcm.push({
-            nama: data3[i][1] || '-',
-            prodi: data3[i][3] || '-',
-            angkatan: data3[i][4] || '-',
-            nilai: data3[i][5] !== undefined ? data3[i][5] : '-'
-          });
+          res.pcm.push({ nama: data3[i][1], prodi: data3[i][3], angkatan: data3[i][4], nilai: data3[i][5] || 0 });
         }
       }
       res.rataPcm = countPcm > 0 ? (totalPcm / countPcm).toFixed(2) : 0;
     }
-  } catch(e) { Logger.log('Error PCM: ' + e.message); }
+  } catch(e) { Logger.log(e.message); }
   
-  // Ubah menjadi format teks JSON agar tidak mengalami gangguan serialisasi array di Apps Script
   return JSON.stringify(res);
 }
