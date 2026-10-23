@@ -1,161 +1,70 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Eksekutif Organisasi</title>
-  <link href="https://jsdelivr.net" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://jsdelivr.net"></script>
+    <!-- Chart.js -->
+    <script src="https://jsdelivr.net"></script>
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal p-4 md:p-6">
+<body class="bg-gray-900 text-gray-100 font-sans antialiased">
 
-  <div class="max-w-7xl mx-auto">
-    <!-- Header -->
-    <div class="bg-gradient-to-r from-blue-800 to-blue-600 p-6 shadow-md text-2xl text-white font-bold rounded-lg mb-6">
-      Dashboard Eksekutif Organisasi
-    </div>
-
-    <!-- Ringkasan Angka (KPI) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-      <div class="bg-white border-t-4 border-blue-600 rounded-lg shadow p-6 text-center">
-        <h5 class="font-bold uppercase text-gray-400 text-xs tracking-wider mb-2">Total Mahasiswa Keguruan</h5>
-        <h3 class="font-bold text-4xl text-blue-600" id="kpi-mhs">Loading...</h3>
-      </div>
-      <div class="bg-white border-t-4 border-green-500 rounded-lg shadow p-6 text-center">
-        <h5 class="font-bold uppercase text-gray-400 text-xs tracking-wider mb-2">Total Kegiatan (IE & ISOSK)</h5>
-        <h3 class="font-bold text-4xl text-green-600" id="kpi-kegiatan">Loading...</h3>
-      </div>
-      <div class="bg-white border-t-4 border-purple-500 rounded-lg shadow p-6 text-center">
-        <h5 class="font-bold uppercase text-gray-400 text-xs tracking-wider mb-2">Rata-Rata Nilai PCM</h5>
-        <h3 class="font-bold text-4xl text-purple-600" id="kpi-pcm">Loading...</h3>
-      </div>
-    </div>
-
-    <!-- Layout Tabel -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      
-      <!-- Tabel 1 -->
-      <div class="bg-white p-6 rounded-lg shadow">
-        <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2">Ringkasan Data Kuliah Keguruan</h3>
-        <div class="overflow-x-auto max-h-64">
-          <table class="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr class="bg-gray-100 text-gray-700 uppercase text-xs">
-                <th class="p-3 border-b">No</th><th class="p-3 border-b">Nama</th><th class="p-3 border-b">Prodi</th><th class="p-3 border-b">Angkatan</th>
-              </tr>
-            </thead>
-            <tbody id="table-keguruan">
-              <tr><td colspan="4" class="p-4 text-center text-gray-400 italic">Memuat data...</td></tr>
-            </tbody>
-          </table>
+    <!-- Top Navigation -->
+    <header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                📊 <span class="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Executive Insight</span>
+            </h1>
+            <div id="last-updated" class="text-xs text-gray-400 bg-gray-800 px-3 py-1 rounded-full border border-gray-700">
+                Memuat data...
+            </div>
         </div>
-      </div>
+    </header>
 
-      <!-- Tabel 2 -->
-      <div class="bg-white p-6 rounded-lg shadow">
-        <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2">Ringkasan Data Nilai PCM</h3>
-        <div class="overflow-x-auto max-h-64">
-          <table class="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr class="bg-gray-100 text-gray-700 uppercase text-xs">
-                <th class="p-3 border-b">Nama</th><th class="p-3 border-b">Prodi</th><th class="p-3 border-b">Angkatan</th><th class="p-3 border-b">Nilai PCM</th>
-              </tr>
-            </thead>
-            <tbody id="table-pcm">
-              <tr><td colspan="4" class="p-4 text-center text-gray-400 italic">Memuat data...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- KPI Cards Section -->
+        <section class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+            <!-- Card 1 -->
+            <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-6 shadow-sm">
+                <p class="text-sm font-medium text-gray-400">Total Pendapatan</p>
+                <p id="kpi-revenue" class="mt-2 text-3xl font-semibold text-white">Rp 0</p>
+            </div>
+            <!-- Card 2 -->
+            <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-6 shadow-sm">
+                <p class="text-sm font-medium text-gray-400">Total Transaksi</p>
+                <p id="kpi-sales" class="mt-2 text-3xl font-semibold text-white">0</p>
+            </div>
+            <!-- Card 3 -->
+            <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-6 shadow-sm">
+                <p class="text-sm font-medium text-gray-400">Target Pencapaian</p>
+                <p id="kpi-target" class="mt-2 text-3xl font-semibold text-emerald-400">0%</p>
+            </div>
+        </section>
 
-      <!-- Tabel 3 -->
-      <div class="bg-white p-6 rounded-lg shadow lg:col-span-2">
-        <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2">Log Aktivitas Kegiatan (IE & ISOSK)</h3>
-        <div class="overflow-x-auto max-h-64">
-          <table class="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr class="bg-gray-100 text-gray-700 uppercase text-xs">
-                <th class="p-3 border-b">Nama</th><th class="p-3 border-b">Kegiatan</th><th class="p-3 border-b">Institusi</th><th class="p-3 border-b">Lokasi</th>
-              </tr>
-            </thead>
-            <tbody id="table-kegiatan">
-              <tr><td colspan="4" class="p-4 text-center text-gray-400 italic">Memuat data...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        <!-- Charts Section -->
+        <section class="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <!-- Tren Penjualan -->
+            <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-6">
+                <h3 class="text-base font-semibold text-white mb-4">Tren Pendapatan Bulanan</h3>
+                <div class="h-80 relative">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+            <!-- Distribusi Kategori -->
+            <div class="bg-gray-800 border border-gray-700/50 rounded-xl p-6">
+                <h3 class="text-base font-semibold text-white mb-4">Proporsi Penjualan Kategori</h3>
+                <div class="h-80 relative flex justify-center">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </section>
 
-    </div>
-  </div>
+    </main>
 
-  <script>
-    // === PENTING: TEMPELKAN URL WEB APP GOOGLE APPS SCRIPT BARU ANDA DI BAWAH INI ===
-    const API_URL = "MASUKKAN_URL_WEB_APP_ANDA_DISINI";
-
-    window.addEventListener('load', function() {
-      if(API_URL === "MASUKKAN_URL_WEB_APP_ANDA_DISINI") {
-        alert("Konfigurasi Belum Selesai: Masukkan URL Web App Apps Script Anda pada kode HTML baris ke-109!");
-        return;
-      }
-
-      fetch(API_URL)
-        .then(res => {
-          if (!res.ok) throw new Error("Respon server bermasalah");
-          return res.json();
-        })
-        .then(data => {
-          document.getElementById('kpi-mhs').innerText = data.totalMhs;
-          document.getElementById('kpi-kegiatan').innerText = data.totalKegiatan;
-          document.getElementById('kpi-pcm').innerText = data.rataPcm;
-
-          // Render Tabel Keguruan
-          let h1 = '';
-          if(data.keguruan.length > 0) {
-            data.keguruan.forEach(item => {
-              h1 += `<tr class="border-b hover:bg-gray-50">
-                <td class="p-3">${item.no || '-'}</td>
-                <td class="p-3 font-semibold text-gray-800">${item.nama || '-'}</td>
-                <td class="p-3 text-gray-600">${item.prodi || '-'}</td>
-                <td class="p-3 text-gray-500">${item.angkatan || '-'}</td>
-              </tr>`;
-            });
-          } else { h1 = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Data Kosong</td></tr>'; }
-          document.getElementById('table-keguruan').innerHTML = h1;
-
-          // Render Tabel PCM
-          let h2 = '';
-          if(data.pcm.length > 0) {
-            data.pcm.forEach(item => {
-              h2 += `<tr class="border-b hover:bg-gray-50">
-                <td class="p-3 font-semibold text-gray-800">${item.nama || '-'}</td>
-                <td class="p-3 text-gray-600">${item.prodi || '-'}</td>
-                <td class="p-3 text-gray-500">${item.angkatan || '-'}</td>
-                <td class="p-3 text-purple-600 font-bold">${item.nilai}</td>
-              </tr>`;
-            });
-          } else { h2 = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Data Kosong</td></tr>'; }
-          document.getElementById('table-pcm').innerHTML = h2;
-
-          // Render Tabel Kegiatan
-          let h3 = '';
-          if(data.kegiatan.length > 0) {
-            data.kegiatan.forEach(item => {
-              let badge = String(item.kegiatan).includes('Edukatif') ? 'bg-green-500' : 'bg-yellow-600';
-              let lokasi = `${item.kecamatan || '-'}, ${item.kota || '-'}`;
-              h3 += `<tr class="border-b hover:bg-gray-50">
-                <td class="p-3 font-semibold text-gray-800">${item.nama || '-'}</td>
-                <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold text-white ${badge}">${item.kegiatan || '-'}</span></td>
-                <td class="p-3 text-gray-600">${item.institusi || '-'}</td>
-                <td class="p-3 text-gray-500">${lokasi}</td>
-              </tr>`;
-            });
-          } else { h3 = '<tr><td colspan="4" class="p-4 text-center text-gray-500">Data Kosong</td></tr>'; }
-          document.getElementById('table-kegiatan').innerHTML = h3;
-        })
-        .catch(err => {
-          console.error(err);
-          alert("Gagal memuat API data: Hubungkan URL Web App Apps Script dengan benar.");
-        });
-    });
-  </script>
+    <!-- Project Logic -->
+    <script src="app.js"></script>
 </body>
 </html>
