@@ -1,75 +1,103 @@
-function doGet() {
-  return ContentService.createTextOutput(getDashboardData())
-    .setMimeType(ContentService.MimeType.JSON);
+// GANTI DENGAN URL CSV GOOGLE SHEETS ANDA (Langkah publikasi ada di bawah)
+const SPREADSHEET_CSV_URL = 'https://google.com';
+
+// Konfigurasi awal Chart.js agar bertema gelap
+Chart.defaults.color = '#9ca3af';
+Chart.defaults.borderColor = '#374151';
+
+let trendChart, pieChart;
+
+async function fetchDashboardData() {
+    try {
+        const response = await fetch(SPREADSHEET_CSV_URL);
+        const csvText = await response.text();
+        const data = parseCSV(csvText);
+
+        // Perbarui UI Dashboard
+        updateKPI(data);
+        renderCharts(data);
+        
+        document.getElementById('last-updated').innerText = `Diperbarui otomatis: ${new Date().toLocaleTimeString()}`;
+    } catch (error) {
+        console.error('Gagal mengambil data Spreadsheet:', error);
+        document.getElementById('last-updated').innerText = 'Gagal memuat data terbaru';
+    }
 }
 
-function getDashboardData() {
-  var idKeguruan = '1feTjAWGR982FHxcK4GivBkuai_NPC3bMHnvkbE3u0tM'; 
-  var idKegiatan = '1Z2Mp0gAoe7q-TnzoQC_vzIaSXrA1Aht0aY2Th4rBC7o'; 
-  var idPcm      = '1qwhciloe55ICj8L172JJgNKVWNXBLBql2qECnVluwXo'; 
-  
-  var res = {
-    totalMhs: 0,
-    totalKegiatan: 0,
-    rataPcm: 0,
-    keguruan: [],
-    kegiatan: [],
-    pcm: []
-  };
-  
-  // 1. Ambil Data Kuliah Keguruan
-  try {
-    var data1 = SpreadsheetApp.openById(idKeguruan).getSheets()[0].getDataRange().getValues();
-    if (data1.length > 1) {
-      res.totalMhs = data1.length - 1;
-      for (var i = 1; i < Math.min(data1.length, 6); i++) {
-        res.keguruan.push({ 
-          no: data1[i][0], 
-          nama: data1[i][1], 
-          prodi: data1[i][3], 
-          angkatan: data1[i][4] 
+// Fungsi sederhana mengubah teks CSV menjadi Array of Objects
+function parseCSV(text) {
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+    const headers = lines[0].split(',');
+    
+    return lines.slice(1).map(line => {
+        const values = line.split(',');
+        const obj = {};
+        headers.forEach((header, index) => {
+            obj[header.trim()] = values[index] ? values[index].trim() : '';
         });
-      }
-    }
-  } catch(e) { Logger.log("Mhs: " + e.message); }
-  
-  // 2. Ambil Data IE dan ISOSK
-  try {
-    var data2 = SpreadsheetApp.openById(idKegiatan).getSheets()[0].getDataRange().getValues();
-    if (data2.length > 1) {
-      res.totalKegiatan = data2.length - 1;
-      for (var i = 1; i < Math.min(data2.length, 6); i++) {
-        res.kegiatan.push({ 
-          nama: data2[i][1], 
-          kegiatan: data2[i][4], 
-          institusi: data2[i][5], 
-          kecamatan: data2[i][7], 
-          kota: data2[i][6] 
-        });
-      }
-    }
-  } catch(e) { Logger.log("Keg: " + e.message); }
-  
-  // 3. Ambil Data PCM
-  try {
-    var data3 = SpreadsheetApp.openById(idPcm).getSheets()[0].getDataRange().getValues();
-    if (data3.length > 1) {
-      var totalPcm = 0, countPcm = 0;
-      for (var i = 1; i < data3.length; i++) {
-        var nilai = parseFloat(data3[i][5]); // Kolom ke-6 (Nilai PCM)
-        if (!isNaN(nilai)) { totalPcm += nilai; countPcm++; }
-        if (i < 6) {
-          res.pcm.push({ 
-            nama: data3[i][1], 
-            prodi: data3[i][3], 
-            angkatan: data3[i][4], 
-            nilai: !isNaN(nilai) ? nilai : 0 
-          });
-        }
-      }
-      res.rataPcm = countPcm > 0 ? (totalPcm / countPcm).toFixed(2) : 0;
-    }
-  } catch(e) { Logger.log("PCM: " + e.message); }
-  
-  return JSON.stringify(res);
+        return obj;
+    });
 }
+
+function updateKPI(data) {
+    // Asumsi kolom di spreadsheet Anda bernama: 'Pendapatan', 'Transaksi', 'Target'
+    let totalRevenue = 0;
+    let totalSales = 0;
+    let targetPct = 0;
+
+    data.forEach(row => {
+        totalRevenue += parseFloat(row.Pendapatan || 0);
+        totalSales += parseInt(row.Transaksi || 0);
+        targetPct = parseFloat(row.Target || 0); // Ambil data baris terakhir untuk target
+    });
+
+    // Format mata uang Rupiah
+    document.getElementById('kpi-revenue').innerText = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalRevenue);
+    document.getElementById('kpi-sales').innerText = new Intl.NumberFormat('id-ID').format(totalSales);
+    document.getElementById('kpi-target').innerText = `${targetPct}%`;
+}
+
+function renderCharts(data) {
+    // 1. Ekstrak data untuk Grafik Batang (Tren Bulanan)
+    // Asumsi kolom spreadsheet: 'Bulan', 'Pendapatan'
+    const months = data.map(row => row.Bulan);
+    const revenues = data.map(row => parseFloat(row.Pendapatan || 0));
+
+    if (trendChart) trendChart.destroy();
+    const ctxTrend = document.getElementById('trendChart').getContext('2d');
+    trendChart = new Chart(ctxTrend, {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Pendapatan',
+                data: revenues,
+                backgroundColor: '#3b82f6',
+                borderRadius: 6
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // 2. Ekstrak data untuk Grafik Lingkaran (Kategori Produk)
+    // Asumsi kolom spreadsheet: 'Kategori', 'Transaksi'
+    const categories = data.map(row => row.Kategori).filter(Boolean);
+    const salesPerCategory = data.map(row => parseInt(row.Transaksi || 0));
+
+    if (pieChart) pieChart.destroy();
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+    pieChart = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+            labels: categories,
+            datasets: [{
+                data: salesPerCategory,
+                backgroundColor: ['#f59e0b', '#10b981', '#6366f1', '#ec4899', '#14b8a6']
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+// Jalankan fungsi saat halaman selesai dimuat
+window.addEventListener('DOMContentLoaded', fetchDashboardData);
